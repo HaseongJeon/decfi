@@ -3,17 +3,19 @@ import math
 def raw_to_json(text):
   split_text = text.split(',')
   if len(split_text) == 13:
-    split_text.remove(split_text[1])
+    split_text.remove(split_text[1]) #1998~2018년 월드컵의 split_text에 있는 빈 문자열 제거
 
-  if len(split_text[5]) != 3:
+  #승부차기까지 간 경우
+  if len(split_text[5]) != 3: 
     home_away_score = int(split_text[5][4])
     json_text = {"home": split_text[4][:-3], "away": split_text[6][3:], "home_point": home_away_score, "away_point": home_away_score, "dif": 0, "home_rank": 0, "away_rank": 0, "round": 16}
-
+  #승부차기까지 가지 않은 경우
   else:
     home_point = int(split_text[5].split('–')[0])
     away_point = int(split_text[5].split('–')[1])
     json_text = {"home": split_text[4][:-3], "away": split_text[6][3:], "home_point": home_point, "away_point": away_point, "dif": home_point - away_point, "home_rank": 0, "away_rank": 0, "round": 16}
 
+  #몇 강까지 갔는지 기록
   if split_text[0] == 'Round of 16':
     json_text['round'] = 16
   elif split_text[0] == 'Quarter-finals':
@@ -25,32 +27,33 @@ def raw_to_json(text):
   
   return json_text
 
-print(raw_to_json('Round of 16,,Sun,2014-06-29,17:00 (05:00),Costa Rica cr,(5) 1–1 (3),gr Greece,41242,Itaipava Arena Pernambuco (Neutral Site),Benjamin Williams,Match Report,Costa Rica won on penalty kicks following extra time'))
 
 #월드컵 연도 나누는 함수
 def worldcup_year(string):
-  split_string = string.split('\n!\n')
+  split_string = string.split('!/n')
   return split_string
 
 worldcup_year(game_string)
 
+
 def get_teams_of_league(worldcup):
+  #쪼개기
   worldcup_str = worldcup.split('\n')
   split_list = [] 
   country_list = []
   dictionary_list = []
   return_dict = [{16: []}, {8:[]}, {4:[]}, {2:[]}, {1:[]}]
+  
+  #쓸모없는 문자열 없애기
+  wc_str = [p for p in worldcup_str if p != '' and p != '!' and p != '! ' and p != '\n']
+      
 
 #엔터(\n)를 기준으로 쪼개진 값을 딕셔너리 형태로 변환 - split_list로 들어감
-  for i in worldcup_str:
-    split_list.append(raw_to_json(i))
+  split_list = [raw_to_json(i) for i in wc_str]
 
 #참가한 나라들 모두 나열(중복 X) - country_list로 들어감
-  for j in split_list:
-    if j['home'] not in country_list:
-      country_list.append(j['home'])
-    if j['away'] not in country_list:
-      country_list.append(j['away'])
+  country_list = set([j['home'] for j in split_list] + [j['away'] for j in split_list])
+      
       
   for k in country_list:
     #한 나라가 참가한 모든 경기를 team_gamecollection에 넣음
@@ -88,6 +91,7 @@ def get_teams_of_league(worldcup):
 
   return return_dict
 
+#tracking_team에서 대상 팀이 어느 경기에서 away 팀으로 배정되는 경우 home과 away의 위치를 바꾸는 프로그램
 def changehomeaway(for_variable):
   cng_home = for_variable['away']
   cng_away = for_variable['home']
@@ -106,8 +110,6 @@ def changehomeaway(for_variable):
 def tracking_team(match1, team):
   worldcup_str = match1.split('\n')
   split_list = [] 
-  country_list = []
-  dictionary_list = []
 
 #엔터(\n)를 기준으로 쪼개진 값을 딕셔너리 형태로 변환 - split_list로 들어감
   for i in worldcup_str:
